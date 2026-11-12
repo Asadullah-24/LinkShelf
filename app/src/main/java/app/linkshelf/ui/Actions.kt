@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import app.linkshelf.data.LinkEntity
+import app.linkshelf.download.DownloadMode
+import app.linkshelf.download.Downloads
 
 /** Small helpers for talking to other apps. */
 object Actions {
@@ -30,6 +33,14 @@ object Actions {
     fun share(context: Context, text: String) {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
         context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    fun download(context: Context, links: List<LinkEntity>, mode: DownloadMode) {
+        if (links.isEmpty()) return
+        Downloads.enqueue(context, links, mode)
+        val what = if (mode == DownloadMode.AUDIO) "audio" else "video"
+        val count = if (links.size == 1) "" else " (${links.size} items)"
+        Toast.makeText(context, "Downloading $what$count. Progress is in the notification.", Toast.LENGTH_SHORT).show()
     }
 
     /** Reads the clipboard. Works while our own screen has focus. */

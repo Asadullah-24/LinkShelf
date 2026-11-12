@@ -20,6 +20,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
@@ -54,6 +57,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.linkshelf.data.LinkEntity
 import app.linkshelf.domain.Platform
+import app.linkshelf.download.DownloadMode
+import app.linkshelf.download.Downloads
 import app.linkshelf.ui.Actions
 import app.linkshelf.ui.MainViewModel
 import app.linkshelf.ui.components.ConfirmDialog
@@ -88,6 +93,7 @@ fun FolderScreen(
     var sheetItem by remember { mutableStateOf<LinkEntity?>(null) }
     var sortMenuOpen by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var downloadMenuOpen by remember { mutableStateOf(false) }
 
     val folderLinks = remember(links, platform) {
         if (platform == null) links else links.filter { it.platform == platform.name }
@@ -140,6 +146,37 @@ fun FolderScreen(
                             val ids = visible.map { it.id }.toSet()
                             selected = if (selected.containsAll(ids)) selected - ids else selected + ids
                         }) { Icon(Icons.Filled.SelectAll, contentDescription = "Select all") }
+                        if (Downloads.isAvailable) {
+                            Box {
+                                IconButton(
+                                    onClick = { downloadMenuOpen = true },
+                                    enabled = selected.isNotEmpty(),
+                                ) { Icon(Icons.Filled.Download, contentDescription = "Download") }
+                                DropdownMenu(
+                                    expanded = downloadMenuOpen,
+                                    onDismissRequest = { downloadMenuOpen = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Download video") },
+                                        leadingIcon = { Icon(Icons.Filled.Movie, contentDescription = null) },
+                                        onClick = {
+                                            downloadMenuOpen = false
+                                            Actions.download(context, selectedLinks, DownloadMode.VIDEO)
+                                            exitSelection()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Download audio (MP3)") },
+                                        leadingIcon = { Icon(Icons.Filled.MusicNote, contentDescription = null) },
+                                        onClick = {
+                                            downloadMenuOpen = false
+                                            Actions.download(context, selectedLinks, DownloadMode.AUDIO)
+                                            exitSelection()
+                                        },
+                                    )
+                                }
+                            }
+                        }
                         IconButton(
                             onClick = { Actions.copy(context, selectedLinks.joinToString("\n") { it.url }) },
                             enabled = selected.isNotEmpty(),

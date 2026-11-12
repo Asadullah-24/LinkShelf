@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.linkshelf.data.LinkEntity
 import app.linkshelf.data.platformEnum
+import app.linkshelf.download.DownloadMode
+import app.linkshelf.download.Downloads
 import app.linkshelf.ui.Actions
 import app.linkshelf.ui.theme.Panel
 import app.linkshelf.ui.theme.TextMuted
@@ -74,6 +78,14 @@ fun ItemSheet(
             }
             SheetAction(Icons.Filled.Share, "Share") {
                 Actions.share(context, link.url); onDismiss()
+            }
+            if (Downloads.isAvailable) {
+                SheetAction(Icons.Filled.Movie, "Download video") {
+                    Actions.download(context, listOf(link), DownloadMode.VIDEO); onDismiss()
+                }
+                SheetAction(Icons.Filled.MusicNote, "Download audio (MP3)") {
+                    Actions.download(context, listOf(link), DownloadMode.AUDIO); onDismiss()
+                }
             }
             SheetAction(Icons.Filled.Edit, "Rename") { renaming = true }
             SheetAction(Icons.Filled.Delete, "Delete", danger = true) { confirmDelete = true }

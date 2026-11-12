@@ -13,6 +13,7 @@ import app.linkshelf.ui.MainActivity
 object Notifications {
 
     const val CHANNEL_BUBBLE = "floating_button"
+    const val CHANNEL_DOWNLOADS = "downloads"
     const val BUBBLE_NOTIFICATION_ID = 1001
 
     fun createChannels(context: Context) {
@@ -24,7 +25,13 @@ object Notifications {
             description = "Shown while the floating save button is on."
             setShowBadge(false)
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val downloads = NotificationChannel(
+            CHANNEL_DOWNLOADS,
+            "Downloads",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply { description = "Progress and results of video and audio downloads." }
+        context.getSystemService(NotificationManager::class.java)
+            .createNotificationChannels(listOf(channel, downloads))
     }
 
     fun bubbleNotification(context: Context): Notification {

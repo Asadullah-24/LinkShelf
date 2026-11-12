@@ -21,7 +21,15 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.2.0"
+
+        // The downloader ships native binaries; phones only need ARM.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    }
+
+    // yt-dlp's Python and ffmpeg binaries must be extracted to disk to run.
+    packaging {
+        jniLibs { useLegacyPackaging = true }
     }
 
     // "play": Google Play build (no downloader). "full": GitHub build with every feature.
@@ -120,4 +128,9 @@ dependencies {
     ksp("androidx.room:room-compiler:$room")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // Downloader (GitHub "full" build only)
+    val youtubedl = "0.17.4"
+    "fullImplementation"("io.github.junkfood02.youtubedl-android:library:$youtubedl")
+    "fullImplementation"("io.github.junkfood02.youtubedl-android:ffmpeg:$youtubedl")
 }

@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableFloatStateOf
 import app.linkshelf.capture.AutoGrabService
 import app.linkshelf.data.SettingsStore
+import app.linkshelf.download.Downloads
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -248,6 +249,26 @@ fun SettingsScreen(
                     title = "Share menu",
                     subtitle = "Always on: in any app tap Share → Save to LinkShelf.",
                 )
+            }
+
+            if (Downloads.isAvailable) {
+                SectionHeader("Downloads")
+                SettingCard {
+                    SettingRow(
+                        title = "Where files go",
+                        subtitle = "Videos: Movies/LinkShelf · Audio: Music/LinkShelf · Photos: Pictures/LinkShelf",
+                    )
+                    SettingRow(
+                        title = "Update downloader",
+                        subtitle = "Instagram, Facebook and YouTube change often. Update if downloads start failing.",
+                        onClick = {
+                            scope.launch {
+                                snackbar.showSnackbar("Updating downloader…")
+                                snackbar.showSnackbar(Downloads.updateEngine(context))
+                            }
+                        },
+                    )
+                }
             }
 
             SectionHeader("Your data")
