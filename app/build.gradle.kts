@@ -24,7 +24,27 @@ android {
         versionName = "0.1.0"
     }
 
+    // "play": Google Play build (no downloader). "full": GitHub build with every feature.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "DOWNLOADS_ENABLED", "false")
+        }
+        create("full") {
+            dimension = "distribution"
+            buildConfigField("boolean", "DOWNLOADS_ENABLED", "true")
+        }
+    }
+
     signingConfigs {
+        // Committed debug key, so every CI dev build can be installed over the previous one.
+        getByName("debug") {
+            storeFile = file("signing/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (keystoreFile != null) {
             create("release") {
                 storeFile = file(keystoreFile)

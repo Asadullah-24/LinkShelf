@@ -11,3 +11,6 @@
 .cxx/
 *.keystore
 *.jks
+
+# Shared debug key so dev builds can update each other
+!app/signing/debug.keystore

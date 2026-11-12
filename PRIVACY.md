@@ -14,8 +14,8 @@ and it does not collect analytics, advertising IDs or crash reports.
 
 ## Network use
 
-- To show thumbnails and titles for YouTube links, the app requests them from YouTube
-  (`i.ytimg.com` and `youtube.com/oembed`). Only the link you saved is sent.
+- To show a title and thumbnail for a saved link, the app requests that link's public preview
+  (YouTube and TikTok oEmbed, or the page's preview tags for other sites). Only the link you saved is requested.
 - No other data leaves your device.
 
 ## Clipboard
@@ -23,11 +23,17 @@ and it does not collect analytics, advertising IDs or crash reports.
 The app reads the clipboard **only** when you tap the floating button, the Quick Settings tile
 or the "Paste link" button, so it can save the link you copied. It never reads the clipboard in the background.
 
+## Accessibility service (optional)
+
+If you turn on "One-tap save", LinkShelf uses Android's Accessibility service only when you tap the
+floating button: it presses Share and Copy link in the app on screen and saves that link.
+It does not read, store or send any other screen content.
+
 ## Permissions
 
 - **Display over other apps:** shows the floating save button. Optional.
 - **Notifications:** shows a notification while the floating button is on. Optional.
-- **Internet:** loads YouTube thumbnails and titles.
+- **Internet:** loads link titles and thumbnails.
 
 ## Your control
 

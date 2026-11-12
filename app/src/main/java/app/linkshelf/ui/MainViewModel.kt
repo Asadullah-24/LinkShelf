@@ -53,6 +53,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refreshPreviews() {
+        viewModelScope.launch {
+            _messages.emit("Loading previews…")
+            val count = repository.refreshMissingPreviews()
+            _messages.emit(if (count == 0) "No new previews found" else "Updated $count previews")
+        }
+    }
+
     fun exportTo(uri: Uri) {
         viewModelScope.launch {
             val ok = runCatching {

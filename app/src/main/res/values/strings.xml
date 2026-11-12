@@ -3,4 +3,7 @@
     <string name="app_name">LinkShelf</string>
     <string name="share_label">Save to LinkShelf</string>
     <string name="tile_label">Save link</string>
+    <string name="autograb_label">LinkShelf one-tap save</string>
+    <string name="autograb_summary">Save the reel or post on screen with one tap of the floating button.</string>
+    <string name="autograb_description">When you tap the LinkShelf floating button, this service presses Share and then Copy link in the app you are using, and saves that link. It acts only when you tap the button. It does not read, store or send anything else.</string>
 </resources>

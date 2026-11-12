@@ -21,6 +21,8 @@ data class LinkEntity(
     /** True once the user renamed the item, so fetched titles never overwrite it. */
     val customTitle: Boolean = false,
     val addedAt: Long,
+    /** Local preview image file, so cards show thumbnails offline. */
+    val thumbnailPath: String? = null,
 )
 
 /** Kept outside the entity so Room does not try to store it as a column. */

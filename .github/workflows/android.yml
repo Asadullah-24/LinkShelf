@@ -27,8 +27,8 @@ jobs:
       - name: Build debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
-          cp app/build/outputs/apk/debug/app-debug.apk LinkShelf-debug.apk
+          ./gradlew assembleFullDebug --stacktrace
+          cp app/build/outputs/apk/full/debug/app-full-debug.apk LinkShelf-debug.apk
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -61,11 +61,11 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
           export KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
-          ./gradlew bundleRelease --stacktrace
+          ./gradlew bundlePlayRelease --stacktrace
 
       - name: Upload release bundle
         if: env.HAS_KEYSTORE == 'true' && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: LinkShelf-release-aab
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: app/build/outputs/bundle/playRelease/app-play-release.aab

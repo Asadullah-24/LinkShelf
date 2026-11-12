@@ -56,6 +56,7 @@ import app.linkshelf.ui.theme.Panel
 import app.linkshelf.ui.theme.TextMuted
 import app.linkshelf.ui.theme.brush
 import coil.compose.AsyncImage
+import java.io.File
 
 @Composable
 fun SectionHeader(text: String) {
@@ -145,7 +146,8 @@ fun LinkCard(
                 .background(platform.brush()),
             contentAlignment = Alignment.Center,
         ) {
-            LinkParser.thumbnailUrl(link.videoId)?.let { thumb ->
+            val thumb: Any? = link.thumbnailPath?.let { File(it) } ?: LinkParser.thumbnailUrl(link.videoId)
+            if (thumb != null) {
                 AsyncImage(
                     model = thumb,
                     contentDescription = null,

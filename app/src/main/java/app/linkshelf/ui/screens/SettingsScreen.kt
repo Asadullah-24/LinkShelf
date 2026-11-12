@@ -27,7 +27,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableFloatStateOf
+import app.linkshelf.capture.AutoGrabService
+import app.linkshelf.data.SettingsStore
+import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -84,6 +91,9 @@ fun SettingsScreen(
         mutableStateOf(settings.bubbleEnabled && Settings.canDrawOverlays(context))
     }
     var waitingForOverlayPermission by remember { mutableStateOf(false) }
+    var autoGrabOn by remember { mutableStateOf(AutoGrabService.isEnabled(context)) }
+    var showAutoGrabInfo by remember { mutableStateOf(false) }
+    var opacity by remember { mutableFloatStateOf(settings.bubbleOpacity) }
     var confirmDeleteAll by remember { mutableStateOf(false) }
 
     fun startBubble() {
@@ -130,6 +140,10 @@ fun SettingsScreen(
 
     // Coming back from the "Display over other apps" system screen.
     LifecycleResumeEffect(Unit) {
+        autoGrabOn = AutoGrabService.isEnabled(context)
+        if (!waitingForOverlayPermission) {
+            bubbleOn = settings.bubbleEnabled && Settings.canDrawOverlays(context)
+        }
         if (waitingForOverlayPermission) {
             waitingForOverlayPermission = false
             if (Settings.canDrawOverlays(context)) {
@@ -187,6 +201,42 @@ fun SettingsScreen(
                     },
                     onClick = { if (bubbleOn) disableBubble() else enableBubble() },
                 )
+                SettingRow(
+                    title = "One-tap save (auto-grab)",
+                    subtitle = if (autoGrabOn) {
+                        "On. Tap the floating button on any reel or post and it is saved, no copying needed."
+                    } else {
+                        "Off. Turn on so the floating button copies the link for you."
+                    },
+                    trailing = {
+                        Switch(checked = autoGrabOn, onCheckedChange = { showAutoGrabInfo = true })
+                    },
+                    onClick = { showAutoGrabInfo = true },
+                )
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Button opacity",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text("${(opacity * 100).roundToInt()}%", color = TextMuted, fontSize = 13.sp)
+                    }
+                    Slider(
+                        value = opacity,
+                        onValueChange = {
+                            opacity = it
+                            settings.bubbleOpacity = it
+                        },
+                        valueRange = SettingsStore.MIN_OPACITY..1f,
+                    )
+                    Text(
+                        "Tip: drag the button to the ✕ at the bottom of the screen to turn it off.",
+                        color = TextMuted,
+                        fontSize = 13.sp,
+                    )
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     SettingRow(
                         title = "Add \"Save link\" to Quick Settings",
@@ -202,6 +252,11 @@ fun SettingsScreen(
 
             SectionHeader("Your data")
             SettingCard {
+                SettingRow(
+                    title = "Load missing previews",
+                    subtitle = "Fetch thumbnails and titles for links that don't have one yet.",
+                    onClick = { vm.refreshPreviews() },
+                )
                 SettingRow(
                     title = "Back up links",
                     subtitle = "Save all $linkCount links to a JSON file.",
@@ -229,6 +284,44 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (showAutoGrabInfo) {
+        AlertDialog(
+            onDismissRequest = { showAutoGrabInfo = false },
+            title = { Text("One-tap save") },
+            text = {
+                Text(
+                    "LinkShelf uses Android's Accessibility service for this. When you tap the floating " +
+                        "button, it presses Share and then Copy link in the app you are using, and saves that " +
+                        "link. It only acts when you tap the button. It does not read, store or send " +
+                        "anything else.\n\n" +
+                        "On the next screen open \"Installed apps\" (or \"Downloaded apps\"), choose " +
+                        "\"LinkShelf one-tap save\" and turn it ${if (autoGrabOn) "off" else "on"}.\n\n" +
+                        "If the switch is greyed out: open App info for LinkShelf, tap ⋮ and choose " +
+                        "\"Allow restricted settings\", then try again."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAutoGrabInfo = false
+                    context.startActivity(
+                        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }) { Text("Open settings") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAutoGrabInfo = false
+                    context.startActivity(
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${context.packageName}"),
+                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }) { Text("App info") }
+            },
+        )
     }
 
     if (confirmDeleteAll) {

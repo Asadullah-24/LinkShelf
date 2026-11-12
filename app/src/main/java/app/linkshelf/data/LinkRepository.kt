@@ -2,7 +2,6 @@ package app.linkshelf.data
 
 import app.linkshelf.domain.LinkParser
 import app.linkshelf.domain.ParsedLink
-import app.linkshelf.domain.Platform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -10,9 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
+import java.io.File
 
 /** Outcome of saving links from a piece of text. */
 data class SaveResult(val found: Int, val added: Int, val duplicates: Int) {
@@ -30,6 +27,7 @@ data class SaveResult(val found: Int, val added: Int, val duplicates: Int) {
 class LinkRepository(
     private val dao: LinkDao,
     private val backgroundScope: CoroutineScope,
+    private val thumbnailDir: File,
 ) {
 
     val links: Flow<List<LinkEntity>> = dao.observeAll()
@@ -56,7 +54,7 @@ class LinkRepository(
                 duplicates++
             } else {
                 added++
-                fetchTitleLater(id, parsed)
+                backgroundScope.launch { loadPreview(id, parsed) }
             }
         }
         SaveResult(found = urls.size, added = added, duplicates = duplicates)
@@ -64,9 +62,24 @@ class LinkRepository(
 
     suspend fun rename(id: Long, title: String) = dao.rename(id, title.trim())
 
-    suspend fun delete(ids: Collection<Long>) = dao.delete(ids.toList())
+    suspend fun delete(ids: Collection<Long>) = withContext(Dispatchers.IO) {
+        dao.getByIds(ids.toList()).forEach { link -> link.thumbnailPath?.let { File(it).delete() } }
+        dao.delete(ids.toList())
+    }
 
-    suspend fun deleteAll() = dao.deleteAll()
+    suspend fun deleteAll() = withContext(Dispatchers.IO) {
+        dao.deleteAll()
+        thumbnailDir.listFiles()?.forEach { it.delete() }
+    }
+
+    /** Fetches titles and thumbnails for links that have none yet. Returns how many got a preview. */
+    suspend fun refreshMissingPreviews(): Int = withContext(Dispatchers.IO) {
+        var updated = 0
+        for (link in dao.getWithoutThumbnail()) {
+            if (loadPreview(link.id, LinkParser.detect(link.url))) updated++
+        }
+        updated
+    }
 
     /** Backup format, shared with the LinkShelf web version. */
     suspend fun exportJson(): String = withContext(Dispatchers.IO) {
@@ -111,27 +124,20 @@ class LinkRepository(
         added
     }
 
-    /** Looks up the real title for YouTube links in the background. Failures are ignored. */
-    private fun fetchTitleLater(id: Long, parsed: ParsedLink) {
-        if (parsed.platform != Platform.YOUTUBE || parsed.videoId == null) return
-        backgroundScope.launch {
-            runCatching {
-                val endpoint = "https://www.youtube.com/oembed?format=json&url=" +
-                    URLEncoder.encode(parsed.url, "UTF-8")
-                val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 8000
-                    readTimeout = 8000
-                }
-                try {
-                    if (conn.responseCode == 200) {
-                        val body = conn.inputStream.bufferedReader().use { it.readText() }
-                        val title = JSONObject(body).optString("title")
-                        if (title.isNotBlank()) dao.setFetchedTitle(id, title)
-                    }
-                } finally {
-                    conn.disconnect()
-                }
-            }
+    /**
+     * Fetches the title and preview image for one link and stores the image locally.
+     * Network failures are ignored; the card keeps its placeholder. Returns true if a thumbnail was saved.
+     */
+    private suspend fun loadPreview(id: Long, parsed: ParsedLink): Boolean = withContext(Dispatchers.IO) {
+        val meta = MetadataFetcher.fetch(parsed) ?: return@withContext false
+        meta.title?.let { dao.setFetchedTitle(id, it) }
+        val imageUrl = meta.imageUrl ?: return@withContext false
+        val file = File(thumbnailDir, "$id.jpg")
+        if (MetadataFetcher.downloadThumbnail(imageUrl, file)) {
+            dao.setThumbnail(id, file.absolutePath)
+            true
+        } else {
+            false
         }
     }
 }

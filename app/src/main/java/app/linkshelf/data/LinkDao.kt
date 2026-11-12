@@ -25,6 +25,15 @@ interface LinkDao {
     @Query("UPDATE links SET title = :title WHERE id = :id AND customTitle = 0")
     suspend fun setFetchedTitle(id: Long, title: String)
 
+    @Query("UPDATE links SET thumbnailPath = :path WHERE id = :id")
+    suspend fun setThumbnail(id: Long, path: String)
+
+    @Query("SELECT * FROM links WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<Long>): List<LinkEntity>
+
+    @Query("SELECT * FROM links WHERE thumbnailPath IS NULL ORDER BY addedAt DESC")
+    suspend fun getWithoutThumbnail(): List<LinkEntity>
+
     @Query("DELETE FROM links WHERE id IN (:ids)")
     suspend fun delete(ids: List<Long>)
 
