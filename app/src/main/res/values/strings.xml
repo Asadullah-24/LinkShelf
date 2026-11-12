@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LinkShelf</string>
+    <string name="share_label">Save to LinkShelf</string>
+    <string name="tile_label">Save link</string>
+</resources>
